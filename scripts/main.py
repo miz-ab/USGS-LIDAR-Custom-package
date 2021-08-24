@@ -29,7 +29,7 @@ class Main:
         values = {"year": 0}
         self.metadata.fillna(value=values, inplace=True)
 
-    def get_polygon_boundaries(self, polygon: Polygon):
+    def getPolygonBoundaries(self, polygon: Polygon):
         """
          this method takes polygon object and returns tuple as bound string 
         """
@@ -48,16 +48,14 @@ class Main:
 
         return f"({[minx, maxx]},{[miny,maxy]})", polygon_input
 
-    def get_pipeline(self, region: str, polygon: Polygon):
+    def getPipeline(self, region: str, polygon: Polygon):
         """
-        This method fills the empty values in the pipeline dictionary and creates a pdal pipeline object.
-        Args:
-            region (str): [the filename of the region where the data is extracted from]
-            polygon (Polygon): [a polygon object]
-        Returns:
-            [pdal.Pipeline]: [pdal pipeline object]
+        fills empty values in the pipeline dictionary and create pdal pipeline object.
+        takes region as str and polygon as Polygon object  
+        and Returns:
+            pdal.Pipeline: pdal pipeline object
         """
-        boundaries, polygon_input = self.get_polygon_boundaries(polygon)
+        boundaries, polygon_input = self.getPolygonBoundaries(polygon)
 
         full_dataset_path = f"{self.public_data_url}{region}/ept.json"
 
@@ -70,15 +68,9 @@ class Main:
 
         return pipeline
 
-    def run_pipeline(self, polygon: Polygon, epsg, region: str = "IA_FullState"):
+    def runPipeline(self, polygon: Polygon, epsg, region: str = "IA_FullState"):
         """
         This method runs a pdal pipeline and fetches data.
-        Args:
-            polygon (Polygon): [a polygon object]
-            epsg (int): [the desired coordinate reference system(CRS)]
-            region (str, optional): [the filename of the region where the data is extracted from]. Defaults to "IA_FullState".
-        Returns:
-            [pdal.Pipeline]: [pdal pipeline object]
         """
         self.output_epsg = epsg
         pipeline = self.get_pipeline(region, polygon)
@@ -91,13 +83,12 @@ class Main:
             self.logger.exception('Pipeline execution failed')
             print(e)
 
-    def make_geo_df(self, arr: dict):
+    def makeGeoDf(self, arr: dict):
         """
-        This method creates a geopandas dataframe from a dictionary.
-        Args:
-            arr (dict): a point cloud data dictionary with X, Y and Z keys.
-        Returns:
-            [Geopandas.GeoDataFrame]: [a geopandas dataframe]
+         creates a geopandas dataframe from a dictionary.
+         takes arr dictionary returns geopandas data frame
+         
+         where X & Y are geometry data points and point Z is elevation 
         """
         geometry_points = [Point(x, y) for x, y in zip(arr["X"], arr["Y"])]
         elevetions = arr["Z"]
@@ -108,7 +99,7 @@ class Main:
         df.set_crs(self.output_epsg, inplace=True)
         return df
 
-    def get_regions(self, polygon: Polygon, epsg: int) -> list:
+    def getRegions(self, polygon: Polygon, epsg: int) -> list:
         """
         This method fetches all the region filenames that contain the polygon.
         Args:
@@ -134,32 +125,24 @@ class Main:
         regions = sort_df['filename'].to_list()
         return regions
 
-    def get_region_data(self, polygon: Polygon, epsg: int, region: str):
+    def getRegionData(self, polygon: Polygon, epsg: int, region: str):
         """
-        This method fetches data for a specific region filename.
-        Args:
-            polygon (Polygon): [a polygon object]
-            epsg (int): [the desired coordinate reference system(CRS)]
-            region (str): [the filename of the region where the data is extracted from]
-        Returns:
-            [Geopandas.GeoDataFrame]: [a geopandas dataframe]
+         fetches data for a specific region.
+         polygon as Polygon object, epsg coordinate reference and region the region where the data is extracted 
+         returns geopandas dataframe 
         """
         pipeline = self.run_pipeline(polygon, epsg, region)
         arr = pipeline.arrays[0]
         return self.make_geo_df(arr)
 
-    def get_data(self, polygon: Polygon, epsg: int) -> dict:
+    def getData(self, polygon: Polygon, epsg: int) -> dict:
         """
-        This method fetches data from all regions that contain a polygon.
-        Args:
-            polygon (Polygon): [a polygon object]
-            epsg (int): [the desired coordinate reference system(CRS)]
-        Returns:
-            [dict]: [a dictionary with the years as keys and the respective geodataframes as the
-            values for the specified polygon]
+        fetches data from all regions that contain a polygon.
+        takes polygon and epsg 
+        returns dictionary as specified polygon 
         """
 
-        regions = self.get_regions(polygon, epsg)
+        regions = self.getRegions(polygon, epsg)
         region_dict = {}
         for region in regions:
             year = int(self.metadata[self.metadata.filename == region].year.values[0])

@@ -73,14 +73,14 @@ class Main:
         This method runs a pdal pipeline and fetches data.
         """
         self.output_epsg = epsg
-        pipeline = self.get_pipeline(region, polygon)
+        pipeline = self.getPipeline(region, polygon)
 
         try:
             pipeline.execute()
-            self.logger.info(f'Pipeline executed successfully.')
+            print('Pipeline executed successfully.')
             return pipeline
         except RuntimeError as e:
-            self.logger.exception('Pipeline execution failed')
+            print('Pipeline execution failed')
             print(e)
 
     def makeGeoDf(self, arr: dict):
@@ -131,9 +131,9 @@ class Main:
          polygon as Polygon object, epsg coordinate reference and region the region where the data is extracted 
          returns geopandas dataframe 
         """
-        pipeline = self.run_pipeline(polygon, epsg, region)
+        pipeline = self.runPipeline(polygon, epsg, region)
         arr = pipeline.arrays[0]
-        return self.make_geo_df(arr)
+        return self.makeGeoDf(arr)
 
     def getData(self, polygon: Polygon, epsg: int) -> dict:
         """
@@ -155,52 +155,11 @@ class Main:
 
         return region_dict
 
-    def plot_terrain_3d(self, gdf: gpd.GeoDataFrame, fig_size: tuple=(12, 10), size: float=0.01):
+    def plotTerrain3d(self, gdf: gpd.GeoDataFrame, fig_size: tuple=(12, 10), size: float=0.01):
         """
-        This method displays points in a geodataframe as a 3d scatter plot.
-        Args:
-            gdf (gpd.GeoDataFrame): [a geopandas dataframe containing points in the geometry column and height in the elevation column.]
-            fig_size (tuple, optional): [filesze of the figure to be displayed]. Defaults to (12, 10).
-            size (float, optional): [size of the points to be plotted]. Defaults to 0.01.
+         displays points in a geodataframe as a 3d scatter plot
         """
         fig, ax = plt.subplots(1, 1, figsize=fig_size)
         ax = plt.axes(projection='3d')
         ax.scatter(gdf.geometry.x, gdf.geometry.y, gdf.elevation, s=size)
         plt.show()
-
-    def subsample(self, gdf: gpd.GeoDataFrame, res: int = 3):
-        """
-        This method subsamples the points in a point cloud data using some resolution.
-        Args:
-            gdf (gpd.GeoDataFrame): [a geopandas dataframe containing points in the geometry column and height in the elevation column.]
-            res (int, optional): [resolution]. Defaults to 3.
-        Returns:
-            [Geopandas.GeoDataFrame]: [a geopandas dataframe]
-        """
-
-        points = np.vstack((gdf.geometry.x, gdf.geometry.y, gdf.elevation)).transpose()
-
-        voxel_size=res
-
-        non_empty_voxel_keys, inverse, nb_pts_per_voxel = np.unique(((points - np.min(points, axis=0)) // voxel_size).astype(int), axis=0, return_inverse=True, return_counts=True)
-        idx_pts_vox_sorted=np.argsort(inverse)
-
-        voxel_grid={}
-        grid_barycenter=[]
-        last_seen=0
-
-        for idx,vox in enumerate(non_empty_voxel_keys):
-            voxel_grid[tuple(vox)]= points[idx_pts_vox_sorted[
-            last_seen:last_seen+nb_pts_per_voxel[idx]]]
-            grid_barycenter.append(np.mean(voxel_grid[tuple(vox)],axis=0))
-            last_seen+=nb_pts_per_voxel[idx]
-
-        sub_sampled =  np.array(grid_barycenter)
-        df_subsampled = gpd.GeoDataFrame(columns=["elevation", "geometry"])
-
-        geometry = [Point(x, y) for x, y in zip( sub_sampled[:, 0],  sub_sampled[:, 1])]
-
-        df_subsampled['elevation'] = sub_sampled[:, 2]
-        df_subsampled['geometry'] = geometry
-
-        return df_subsampled

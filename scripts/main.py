@@ -4,9 +4,7 @@ import json
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
-
-from app_logger import App_Logger
-from file_handler import FileHandler
+from fileHandler import FileHandler
 
 class Main:
    
@@ -23,22 +21,17 @@ class Main:
         instantiate the class, takes public_data_url as base path and pipeline_json_path as json file from which we instantiate the pipeline 
         
         """
-        self.logger = App_Logger().get_logger(__name__)
-        self.file_handler = FileHandler()
-        self.pipeline_json = self.file_handler.read_json(pipeline_json_path)
+        self.fileHandler = FileHandler()
+        self.pipeline_json = self.fileHandler.read_json(pipeline_json_path)
         self.public_data_url = public_data_url
         self.input_epsg = 3857
-        self.metadata = self.file_handler.read_csv("../assets/usgs_3dep_metadata.csv")
+        self.metadata = self.fileHandler.readCsv("../data/usgs_3dep_dataofdata.csv")
         values = {"year": 0}
         self.metadata.fillna(value=values, inplace=True)
 
     def get_polygon_boundaries(self, polygon: Polygon):
         """
-        This method returns the bounds and exterior coordinates of a polygon as strings.
-        Args:
-            polygon (Polygon): [a polygon object]
-        Returns:
-            [tuple]: [bounds string and polygon exterior coordinates string]
+         this method takes polygon object and returns tuple as bound string 
         """
         polygon_df = gpd.GeoDataFrame([polygon], columns=['geometry'])
 

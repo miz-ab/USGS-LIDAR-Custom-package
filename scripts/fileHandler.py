@@ -30,4 +30,4 @@ class FileHandler:
             return json_obj
 
         except FileNotFoundError:
-            self.logger.exception('File not found.')
+            print('File not found.')
